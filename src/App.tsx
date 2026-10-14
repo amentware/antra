@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { PhoneFrame } from './components/PhoneFrame'
 import { BottomNav } from './components/BottomNav'
 import { ToastHost } from './components/ToastHost'
@@ -66,7 +66,6 @@ function Splash() {
 
 function AuthenticatedApp() {
   const location = useLocation()
-  const navigate = useNavigate()
   const addOpen = useUiStore((s) => s.addOpen)
   const openAdd = useUiStore((s) => s.openAdd)
   const closeAdd = useUiStore((s) => s.closeAdd)
@@ -112,34 +111,29 @@ function AuthenticatedApp() {
 
   return (
     <div className="relative h-full">
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={location.pathname}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0"
-        >
-          <ErrorBoundary>
-            <Routes location={location}>
-              <Route path="/" element={<HomeScreen />} />
-              <Route path="/insights" element={<InsightsScreen />} />
-              <Route path="/cards" element={<AccountsScreen />} />
-              <Route path="/cards/:id" element={<AccountDetailScreen />} />
-              <Route path="/budgets" element={<BudgetsScreen />} />
-              <Route path="/transactions" element={<TransactionsScreen />} />
-              <Route path="/expense/:id" element={<ExpenseDetailScreen />} />
-              <Route path="/settings" element={<SettingsScreen />} />
-              <Route path="/settings/categories" element={<CategoriesScreen />} />
-              <Route path="/settings/accounts" element={<ManageAccountsScreen />} />
-              <Route path="/settings/tokens" element={<TokensScreen />} />
-              <Route path="/settings/shortcuts" element={<ShortcutsScreen />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </ErrorBoundary>
-        </motion.div>
-      </AnimatePresence>
+      {/* A single keyed route layer re-mounts on navigation and fades in via
+          CSS only. There is deliberately no exit animation: an exiting screen
+          lingering on top (invisible, mid-transform) used to create a stacking
+          context that swallowed taps and scroll gestures. */}
+      <div key={location.pathname} className="absolute inset-0 animate-screen-enter">
+        <ErrorBoundary>
+          <Routes location={location}>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/insights" element={<InsightsScreen />} />
+            <Route path="/cards" element={<AccountsScreen />} />
+            <Route path="/cards/:id" element={<AccountDetailScreen />} />
+            <Route path="/budgets" element={<BudgetsScreen />} />
+            <Route path="/transactions" element={<TransactionsScreen />} />
+            <Route path="/expense/:id" element={<ExpenseDetailScreen />} />
+            <Route path="/settings" element={<SettingsScreen />} />
+            <Route path="/settings/categories" element={<CategoriesScreen />} />
+            <Route path="/settings/accounts" element={<ManageAccountsScreen />} />
+            <Route path="/settings/tokens" element={<TokensScreen />} />
+            <Route path="/settings/shortcuts" element={<ShortcutsScreen />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
+      </div>
 
       {showNav ? <BottomNav onAdd={() => openAdd()} /> : null}
 
@@ -147,10 +141,7 @@ function AuthenticatedApp() {
         open={addOpen}
         onClose={closeAdd}
         currency={preferences.currency}
-        onSaved={(id) => {
-          closeAdd()
-          navigate(`/expense/${id}`)
-        }}
+        onSaved={() => closeAdd()}
       />
 
       <ToastHost />

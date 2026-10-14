@@ -61,6 +61,17 @@
     color: rgb(var(--c-ink));
   }
 
+  /* The app owns a single, fixed-height device frame — the page itself must
+     never scroll. Without this the whole screen could be dragged (especially
+     in standalone iOS where 100% = the large viewport). */
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -139,6 +150,10 @@
   }
   .safe-bottom {
     padding-bottom: var(--safe-bottom);
+  }
+  /* Bottom clearance for screens that sit behind the floating nav bar. */
+  .pb-nav {
+    padding-bottom: calc(var(--safe-bottom) + var(--nav-height) + 16px);
   }
   /* Safe-area + a fixed gap, as a single declaration so it can never be
      overridden by another padding-top utility (e.g. `pt-3`). */

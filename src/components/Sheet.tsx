@@ -33,26 +33,26 @@ export function Sheet({ open, onClose, children, dismissible = true, className, 
   return (
     <AnimatePresence>
       {open ? (
-        <div className="absolute inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+        <div className="pointer-events-none absolute inset-0 z-[70]" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
           <motion.button
             type="button"
             aria-label="Close"
-            className="absolute inset-0 bg-black/35"
+            className="pointer-events-auto absolute inset-0 bg-black/35"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, pointerEvents: 'none' }}
             transition={{ duration: 0.2 }}
             onClick={() => dismissible && onClose()}
           />
           <motion.div
             className={cn(
-              'absolute inset-x-0 bottom-0 flex flex-col rounded-t-sheet bg-canvas shadow-float',
+              'pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col rounded-t-sheet bg-canvas shadow-float',
               fullHeight ? 'top-[env(safe-area-inset-top)]' : 'max-h-[92%]',
               className,
             )}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            exit={{ y: '100%', pointerEvents: 'none' }}
             transition={spring}
             drag={dismissible ? 'y' : false}
             dragConstraints={{ top: 0, bottom: 0 }}

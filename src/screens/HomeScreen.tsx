@@ -5,10 +5,12 @@ import { PullToRefresh } from '../components/PullToRefresh'
 import { Card, Pill, SectionLabel, Tile } from '../components/Card'
 import { AmountText, CompactAmount } from '../components/AmountText'
 import { ExpenseRow } from '../components/ExpenseRow'
+import { ProgressBar } from '../components/Progress'
 import { IconButton } from '../components/Buttons'
 import { BellIcon, ChevronRight, SearchIcon, SparkleIcon, TargetIcon } from '../components/Icons'
 import { SyncIndicator } from '../components/SyncIndicator'
 import { EmptyState } from '../components/EmptyState'
+import { cn } from '../lib/cn'
 import { useAccounts, useBudgets, useCategories, useExpenses, useLookups } from '../hooks/useData'
 import { usePreferences } from '../hooks/usePreferences'
 import { useSessionStore } from '../store/useSessionStore'
@@ -37,6 +39,9 @@ export function HomeScreen() {
   const bSummary = useMemo(() => computeBudgetSummary(rows.filter((r) => r.progress).map((r) => ({ limitMinor: r.progress!.limitMinor, spentMinor: r.spentMinor }))), [rows])
   const cards = useMemo(() => cardStats(accounts, expenses, now), [accounts, expenses, now])
   const outstanding = useMemo(() => totalOutstanding(cards), [cards])
+  const cardsLimit = useMemo(() => cards.reduce((sum, card) => sum + card.limitMinor, 0), [cards])
+  const unpaidCount = useMemo(() => cards.reduce((sum, card) => sum + card.unpaidCount, 0), [cards])
+  const budgetedRows = useMemo(() => rows.filter((row) => row.progress), [rows])
 
   const insight = useMemo(() => {
     const candidates: InsightCandidate[] = rows
@@ -129,56 +134,176 @@ export function HomeScreen() {
           </button>
         ) : null}
 
-        {outstanding > 0 ? (
-          <button
-            type="button"
-            onClick={() => navigate('/cards')}
-            className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-surface px-4 py-3 text-left shadow-card ring-1 ring-hairline/70"
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger/12 text-danger">
-              <SparkleIcon size={17} />
-            </span>
-            <span className="flex-1 text-[13px] font-medium text-ink">
-              {formatMinor(outstanding, preferences.currency)} pending across {cards.filter((c) => c.outstandingMinor > 0).length}{' '}
-              {cards.filter((c) => c.outstandingMinor > 0).length === 1 ? 'card' : 'cards'}
-            </span>
-            <ChevronRight size={16} className="shrink-0 text-muted" />
-          </button>
-        ) : null}
-
-        {/* Budgets shortcut */}
-        {bSummary.budgetCount > 0 ? (
-          <Card interactive className="mt-3 p-4" onClick={() => navigate('/budgets')}>
-            <div className="flex items-center justify-between">
-              <SectionLabel>Monthly budget</SectionLabel>
-              <Pill tone={bSummary.status === 'over' ? 'danger' : bSummary.status === 'warning' ? 'warning' : 'positive'}>
-                {Math.round(bSummary.percentUsed)}% used
-              </Pill>
-            </div>
-            <div className="mt-2 flex items-baseline justify-between">
-              <span className="text-[15px] font-semibold text-ink">
-                {formatMinor(bSummary.totalSpentMinor, preferences.currency)}
-                <span className="font-normal text-muted"> / {formatMinor(bSummary.totalLimitMinor, preferences.currency)}</span>
+        {cards.length > 0 ? (
+          <Card className="mt-3 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => navigate('/cards')}
+              className="flex w-full items-center justify-between px-4 pb-2 pt-4 text-left"
+            >
+              <h2 className="text-[17px] font-semibold text-ink">Card usage</h2>
+              <span className="flex items-center gap-0.5 text-[14px] font-medium text-link">
+                Cards
+                <ChevronRight size={15} />
               </span>
-              {bSummary.overCount > 0 ? <span className="text-[12px] font-semibold text-danger">{bSummary.overCount} over</span> : null}
+            </button>
+            <div className="px-4 pb-4">
+              <div className="flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-faint">Outstanding</div>
+                  <div className="mt-0.5 text-[26px] font-semibold tabular text-ink">
+                    {formatMinor(outstanding, preferences.currency)}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right text-[12px] leading-snug text-muted">
+                  <div>{unpaidCount} unpaid</div>
+                  {cardsLimit > 0 ? (
+                    <div>
+                      {Math.round((outstanding / cardsLimit) * 100)}% of {formatMinor(cardsLimit, preferences.currency)}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+              {cardsLimit > 0 ? <ProgressBar className="mt-2" percent={(outstanding / cardsLimit) * 100} tone="auto" /> : null}
+
+              <div className="mt-3 flex flex-col gap-2.5">
+                {cards.slice(0, 3).map((card) => (
+                  <button
+                    key={card.account.id}
+                    type="button"
+                    onClick={() => navigate(`/cards/${card.account.id}`)}
+                    className="flex items-center gap-3 text-left"
+                  >
+                    <Tile emoji={card.account.icon} color={card.account.color} size={34} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-[13px] font-semibold text-ink">{card.account.name}</span>
+                        <span className="shrink-0 text-[12px] tabular text-muted">
+                          {formatMinor(card.outstandingMinor, preferences.currency)}
+                        </span>
+                      </div>
+                      <ProgressBar
+                        className="mt-1.5"
+                        height={5}
+                        percent={card.limitMinor > 0 ? card.utilization : 0}
+                        tone="auto"
+                      />
+                    </div>
+                    <span className="w-9 shrink-0 text-right text-[11px] tabular text-faint">
+                      {card.limitMinor > 0 ? `${Math.round(card.utilization)}%` : '—'}
+                    </span>
+                  </button>
+                ))}
+                {cards.length > 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/cards')}
+                    className="pressable pt-0.5 text-left text-[12px] font-medium text-link"
+                  >
+                    +{cards.length - 3} more {cards.length - 3 === 1 ? 'card' : 'cards'}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </Card>
-        ) : (
-          <button
-            type="button"
-            onClick={() => navigate('/budgets')}
-            className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-left shadow-card ring-1 ring-hairline/70"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
-              <TargetIcon size={18} />
-            </span>
-            <span className="flex-1">
-              <span className="block text-[14px] font-semibold text-ink">Set monthly budgets</span>
-              <span className="block text-[12px] text-muted">Track pace, safe-to-spend and projections per category.</span>
-            </span>
-            <ChevronRight size={16} className="shrink-0 text-muted" />
-          </button>
-        )}
+        ) : null}
+
+        {/* Budgets — kept separate from the category breakdown below. */}
+        <section className="mt-5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-[19px] font-semibold text-ink">Budgets</h2>
+            <button type="button" className="pressable text-[14px] font-medium text-link" onClick={() => navigate('/budgets')}>
+              {budgetedRows.length > 0 ? 'Manage' : 'Set up'}
+            </button>
+          </div>
+
+          {budgetedRows.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => navigate('/budgets')}
+              className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-left shadow-card ring-1 ring-hairline/70"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                <TargetIcon size={18} />
+              </span>
+              <span className="flex-1">
+                <span className="block text-[14px] font-semibold text-ink">Set monthly budgets</span>
+                <span className="block text-[12px] text-muted">Track pace, safe-to-spend and projections per category.</span>
+              </span>
+              <ChevronRight size={16} className="shrink-0 text-muted" />
+            </button>
+          ) : (
+            <Card className="mt-3 overflow-hidden">
+              <div className="px-4 pt-4">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[13px] text-muted">
+                    {formatMinor(bSummary.totalSpentMinor, preferences.currency)}
+                    <span className="text-faint"> of {formatMinor(bSummary.totalLimitMinor, preferences.currency)}</span>
+                  </span>
+                  <Pill tone={bSummary.status === 'over' ? 'danger' : bSummary.status === 'warning' ? 'warning' : 'positive'}>
+                    {Math.round(bSummary.percentUsed)}% used
+                  </Pill>
+                </div>
+                <ProgressBar className="mt-2" percent={bSummary.percentUsed} />
+                <div className="mt-2 flex items-center justify-between text-[11px] text-faint">
+                  <span>{formatMinor(Math.max(0, bSummary.remainingMinor), preferences.currency)} left</span>
+                  {bSummary.overCount > 0 ? (
+                    <span className="font-semibold text-danger">{bSummary.overCount} over budget</span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="mt-3 divide-y divide-hairline/60">
+                {budgetedRows.slice(0, 4).map((row) => {
+                  const progress = row.progress!
+                  return (
+                    <button
+                      key={row.category.id}
+                      type="button"
+                      onClick={() => navigate('/budgets')}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left"
+                    >
+                      <span className="text-[18px]" aria-hidden>
+                        {row.category.emoji}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="truncate text-[13px] font-semibold text-ink">{row.category.name}</span>
+                          <span className="shrink-0 text-[12px] tabular text-muted">
+                            {formatMinor(row.spentMinor, preferences.currency)}
+                            <span className="text-faint"> / {formatMinor(progress.limitMinor, preferences.currency)}</span>
+                          </span>
+                        </div>
+                        <ProgressBar className="mt-1.5" height={5} percent={progress.percentUsed} />
+                      </div>
+                      <span
+                        className={cn(
+                          'w-9 shrink-0 text-right text-[11px] font-semibold tabular',
+                          progress.status === 'over'
+                            ? 'text-danger'
+                            : progress.status === 'warning'
+                              ? 'text-warning'
+                              : 'text-muted',
+                        )}
+                      >
+                        {Math.round(progress.percentUsed)}%
+                      </span>
+                    </button>
+                  )
+                })}
+                {budgetedRows.length > 4 ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/budgets')}
+                    className="pressable w-full px-4 py-2.5 text-left text-[12px] font-medium text-link"
+                  >
+                    +{budgetedRows.length - 4} more budgets
+                  </button>
+                ) : null}
+              </div>
+            </Card>
+          )}
+        </section>
 
         {/* Categories */}
         {topCategories.length > 0 ? (

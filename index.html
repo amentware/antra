@@ -33,6 +33,25 @@
           root.classList.toggle('light', !dark)
           var meta = document.querySelector('meta[name="theme-color"]')
           if (meta) meta.setAttribute('content', dark ? '#0E0F13' : '#EDECE6')
+
+          // Safe-area fallback. In an iOS standalone PWA env(safe-area-inset-*)
+          // is occasionally reported as 0, which lets content slide under the
+          // status bar / home indicator. Probe it; if it really is 0 while
+          // installed, substitute sensible device values.
+          var probe = document.createElement('div')
+          probe.style.cssText =
+            'position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;visibility:hidden;' +
+            'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)'
+          root.appendChild(probe)
+          var cs = getComputedStyle(probe)
+          var top = parseFloat(cs.paddingTop) || 0
+          var bottom = parseFloat(cs.paddingBottom) || 0
+          root.removeChild(probe)
+
+          var standalone = window.navigator.standalone === true
+          var tall = Math.max(window.screen.width, window.screen.height) >= 780
+          if (standalone && top === 0) root.style.setProperty('--safe-top', tall ? '47px' : '20px')
+          if (standalone && bottom === 0) root.style.setProperty('--safe-bottom', tall ? '34px' : '0px')
         } catch (e) {}
       })()
     </script>

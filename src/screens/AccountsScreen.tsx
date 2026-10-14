@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Card, Pill, SectionLabel, Tile } from '../components/Card'
+import { Card, Pill, Tile } from '../components/Card'
 import { CompactAmount } from '../components/AmountText'
 import { ProgressBar } from '../components/Progress'
 import { Button, IconButton } from '../components/Buttons'
@@ -116,8 +116,13 @@ export function AccountsScreen() {
 
         {cards.length > 0 ? (
           <>
-            <Card className="bg-ink p-5 text-canvas">
-              <SectionLabel className="text-canvas/60">Total outstanding</SectionLabel>
+            {/* NOTE: this is a plain div, not <Card>. Our `cn` helper is bare
+                clsx (no tailwind-merge), and Tailwind emits same-property
+                utilities alphabetically — so `bg-surface` would always beat a
+                passed `bg-ink`, and `text-muted` would beat `text-canvas/60`.
+                Keeping the classes on one element avoids that silent clash. */}
+            <div className="rounded-card bg-ink p-5 text-canvas shadow-card">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-canvas/60">Total outstanding</div>
               <div className="mt-2 text-[34px] font-semibold tabular">{formatMinor(cardsTotalOutstanding, preferences.currency)}</div>
               <div className="mt-1 text-[13px] text-canvas/70">
                 {cardsLimit > 0
@@ -129,7 +134,7 @@ export function AccountsScreen() {
                   <ProgressBar percent={(cardsTotalOutstanding / cardsLimit) * 100} tone="accent" />
                 </div>
               ) : null}
-            </Card>
+            </div>
 
             <section>
               <h2 className="px-1 pb-2 text-[19px] font-semibold text-ink">Credit cards</h2>

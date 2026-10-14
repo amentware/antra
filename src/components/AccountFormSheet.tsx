@@ -105,7 +105,7 @@ export function AccountFormSheet({ open, onClose, currency, account, onSubmit }:
         <span className="min-w-[44px]" />
       </div>
 
-      <div className="scroll-y min-h-0 flex-1 px-4 pb-4">
+      <div className="scroll-y min-h-0 flex-1 px-4 pb-[calc(var(--safe-bottom)+24px)]">
         <div className="mt-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Type</div>
           <div className="mt-2 flex gap-2">

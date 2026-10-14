@@ -58,10 +58,18 @@ export default {
           '0%': { backgroundPosition: '-400px 0' },
           '100%': { backgroundPosition: '400px 0' },
         },
+        // Route transition. No `both` fill: the element's resting state is
+        // visible, so a screen can never be left faded-out or mid-transform
+        // (which used to swallow touches after a fast tab switch).
+        'screen-enter': {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both',
         shimmer: 'shimmer 1.4s linear infinite',
+        'screen-enter': 'screen-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },
   },

@@ -56,7 +56,7 @@ export interface TrendPoint {
 
 export function TrendChart({ data, currency, showPrevious = true }: { data: TrendPoint[]; currency: string; showPrevious?: boolean }) {
   return (
-    <div className="h-[190px] w-full">
+    <div className="h-[190px] w-full" style={{ touchAction: 'pan-y' }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
           <defs>
@@ -113,7 +113,7 @@ export interface Slice {
 export function CategoryDonut({ data, currency, centerLabel }: { data: Slice[]; currency: string; centerLabel?: string }) {
   const total = data.reduce((sum, slice) => sum + slice.value, 0)
   return (
-    <div className="relative h-[190px] w-full">
+    <div className="relative h-[190px] w-full" style={{ touchAction: 'pan-y' }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -158,7 +158,7 @@ export function DistributionBars({
   height?: number
 }) {
   return (
-    <div style={{ height }} className="w-full">
+    <div style={{ height, touchAction: 'pan-y' }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <XAxis dataKey="label" tick={AXIS_STYLE} axisLine={false} tickLine={false} />

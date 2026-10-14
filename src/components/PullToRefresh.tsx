@@ -20,46 +20,60 @@ const MAX_PULL = 96
 export function PullToRefresh({ onRefresh, children, className, disabled }: PullToRefreshProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const startY = useRef<number | null>(null)
+  const pullRef = useRef(0)
+  const refreshingRef = useRef(false)
+  const onRefreshRef = useRef(onRefresh)
+  onRefreshRef.current = onRefresh
+
   const [pull, setPull] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
 
   const runRefresh = useCallback(async () => {
+    refreshingRef.current = true
     setRefreshing(true)
     haptic(10)
     try {
-      await onRefresh()
+      await onRefreshRef.current()
     } finally {
+      refreshingRef.current = false
+      pullRef.current = 0
       setRefreshing(false)
       setPull(0)
     }
-  }, [onRefresh])
+  }, [])
 
+  // Attach listeners exactly once (they read live values through refs), so a
+  // re-render mid-gesture can never orphan a listener and leave the list stuck.
   useEffect(() => {
     const el = scrollRef.current
     if (!el || disabled) return undefined
 
     const onTouchStart = (event: TouchEvent) => {
-      if (el.scrollTop <= 0) startY.current = event.touches[0].clientY
-      else startY.current = null
+      startY.current = el.scrollTop <= 0 ? event.touches[0].clientY : null
     }
 
     const onTouchMove = (event: TouchEvent) => {
-      if (startY.current === null || refreshing) return
+      if (startY.current === null || refreshingRef.current) return
       const delta = event.touches[0].clientY - startY.current
       if (delta <= 0) {
+        pullRef.current = 0
         setPull(0)
         return
       }
       if (el.scrollTop > 0) return
       if (event.cancelable) event.preventDefault()
-      setPull(Math.min(MAX_PULL, delta * 0.5))
+      const next = Math.min(MAX_PULL, delta * 0.5)
+      pullRef.current = next
+      setPull(next)
     }
 
     const onTouchEnd = () => {
-      const current = pull
       startY.current = null
-      if (current >= THRESHOLD) void runRefresh()
-      else setPull(0)
+      if (pullRef.current >= THRESHOLD) void runRefresh()
+      else {
+        pullRef.current = 0
+        setPull(0)
+      }
     }
 
     el.addEventListener('touchstart', onTouchStart, { passive: true })
@@ -72,7 +86,7 @@ export function PullToRefresh({ onRefresh, children, className, disabled }: Pull
       el.removeEventListener('touchend', onTouchEnd)
       el.removeEventListener('touchcancel', onTouchEnd)
     }
-  })
+  }, [disabled, runRefresh])
 
   const progress = Math.min(1, pull / THRESHOLD)
 

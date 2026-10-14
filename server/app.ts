@@ -8,7 +8,7 @@ import type { AppEnv } from './env'
 import { badRequest, forbidden, notFound, readJson, serverError, tooMany, unauthorized } from './http'
 import { authLoginSchema, authSetupSchema, apiTokenCreateSchema } from '../shared/schemas'
 import { DEFAULT_CATEGORIES } from '../shared/categories'
-import { createApiToken, hashPassword, newSalt, randomId, verifyPassword, PBKDF2_ITERATIONS } from './crypto'
+import { createApiToken, hashPassword, newSalt, randomId, resolveIterations, verifyPassword } from './crypto'
 import { clearSessionCookie, createSession, requireAuth, requireSession, revokeSession, rotateSession, sessionAgeSeconds, sessionCookie } from './session'
 import { LOGIN_RATE_LIMIT, SESSION_COOKIE, SESSION_ROTATE_AFTER_SECONDS } from './constants'
 import { rateLimit } from './ratelimit'
@@ -65,13 +65,14 @@ app.post('/auth/setup', async (c) => {
   const now = new Date().toISOString()
   const userId = randomId()
   const salt = newSalt()
-  const hash = await hashPassword(password, salt, PBKDF2_ITERATIONS)
+  const iterations = resolveIterations(c.env.PBKDF2_ITERATIONS)
+  const hash = await hashPassword(password, salt, iterations)
 
   await c.env.DB.prepare(
     `INSERT INTO users (id, email, name, password_hash, password_salt, iterations, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(userId, email.toLowerCase(), name, hash, salt, PBKDF2_ITERATIONS, now, now)
+    .bind(userId, email.toLowerCase(), name, hash, salt, iterations, now, now)
     .run()
 
   await seedDefaults(c, userId)

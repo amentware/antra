@@ -552,6 +552,8 @@ npm run build
   is the token-authenticated public API.
 - **JWT via WebCrypto** (HMAC-SHA256), no crypto dependency. Passwords use
   PBKDF2-SHA256 with a per-user salt; API tokens are SHA-256 hashed at rest.
+  The PBKDF2 work factor is deliberately modest so it fits the Workers
+  **free-tier CPU limit** (see *Password hashing & the free tier* below).
 - **Charts are lazy-loaded** so Recharts never blocks the app shell.
 - **Icons and splash screens are generated** by a dependency-free Node script
   (`scripts/generate-icons.mjs`) that writes PNGs using `zlib` only.
@@ -586,7 +588,9 @@ A few decisions were made where the spec left room; they're easy to change:
 
 - Single-user: registration is permanently disabled after the first account is
   created.
-- Passwords: PBKDF2-SHA256, per-user random salt, stored as base64.
+- Passwords: PBKDF2-SHA256, per-user random salt, stored as base64. The work
+  factor defaults to **70,000** iterations so hashing stays within the Workers
+  free-tier CPU budget (see below); it's configurable via `PBKDF2_ITERATIONS`.
 - Sessions: signed `HttpOnly; Secure; SameSite=Strict` cookie, validated against
   the `sessions` table on every authenticated request, rotated every 7 days.
 - API tokens: shown once, stored only as SHA-256 hashes, revocable per token,
@@ -596,6 +600,32 @@ A few decisions were made where the spec left room; they're easy to change:
 - Responses set a strict **Content-Security-Policy** plus HSTS, `nosniff`,
   `X-Frame-Options: DENY`, a restrictive `Permissions-Policy`,
   `Cross-Origin-Opener-Policy`, and `no-store` on `/api/*`.
+
+### Password hashing & the free tier
+
+Cloudflare's **free** Workers plan (which Pages Functions run on) caps CPU time
+at roughly **10 ms per request**. PBKDF2 is pure CPU, so a high iteration count
+exhausts that budget and the request is aborted — you'd see Cloudflare **Error
+1102** or a generic "something went wrong" on the sign-up/sign-in screen, with
+nothing ever written to the database.
+
+Antra therefore defaults to **70,000** PBKDF2 iterations, which fits comfortably
+with headroom. You can change the work factor with a plain var:
+
+```toml
+# wrangler.toml
+[vars]
+PBKDF2_ITERATIONS = "100000"
+```
+
+Lower it if sign-up still fails; raise it if you move to a **paid** Workers plan
+(which allows up to 30 s of CPU). Because each user row stores its own iteration
+count, changing this only affects **new** users — existing accounts keep
+verifying with the value they were created with.
+
+> Rule of thumb measured on the free plan: ~100k iterations is about the ceiling
+> for the whole request, so stay well below that (the default of 70k leaves room
+> for the rest of sign-up/login).
 
 ---
 

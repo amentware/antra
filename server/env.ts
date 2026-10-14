@@ -10,6 +10,11 @@ export interface Bindings {
   RATE_LIMIT?: KVNamespace
   /** "production" | "preview" — informational only. */
   ENVIRONMENT?: string
+  /**
+   * Override the password-hashing work factor (PBKDF2 iterations). Defaults to
+   * a value that fits the Workers free-tier CPU limit. Raise it on a paid plan.
+   */
+  PBKDF2_ITERATIONS?: string
 }
 
 /** Per-request variables populated by middleware. */

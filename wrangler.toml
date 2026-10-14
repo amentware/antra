@@ -8,6 +8,9 @@ pages_build_output_dir = "dist"
 
 [vars]
 ENVIRONMENT = "production"
+# Password-hashing work factor. Kept modest so PBKDF2 stays within the Workers
+# free-tier CPU limit (~10 ms/request). Raise it if you move to a paid plan.
+PBKDF2_ITERATIONS = "70000"
 
 # D1 — the only database Antra uses.
 # Create it with:  npx wrangler d1 create antra-db

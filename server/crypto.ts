@@ -7,9 +7,31 @@
 
 const encoder = new TextEncoder()
 
-export const PBKDF2_ITERATIONS = 210_000
+/**
+ * Password-hashing work factor.
+ *
+ * Cloudflare Workers (including the free plan that Pages Functions run on)
+ * enforce a CPU-time limit per request — roughly 10 ms on the free plan.
+ * PBKDF2-HMAC-SHA256 is pure CPU work, so a high iteration count blows the
+ * budget and the request is aborted (surfaced as "Error 1102" / a generic
+ * "something went wrong" on the sign-up and sign-in screens).
+ *
+ * Empirically ~100k iterations already consumes the whole free-tier allowance,
+ * so we default to a value that fits with comfortable headroom while keeping a
+ * meaningful work factor. On a paid Workers plan (far more CPU time) you can
+ * raise this by setting the `PBKDF2_ITERATIONS` var.
+ */
+export const PBKDF2_ITERATIONS = 70_000
+const MIN_ITERATIONS = 10_000
 const SALT_BYTES = 16
 const KEY_BITS = 256
+
+/** Parse/validate an iteration-count override from env; falls back to the default. */
+export function resolveIterations(raw?: string | number | null): number {
+  const n = typeof raw === 'number' ? raw : Number.parseInt(String(raw ?? ''), 10)
+  if (!Number.isFinite(n) || n < MIN_ITERATIONS) return PBKDF2_ITERATIONS
+  return Math.floor(n)
+}
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
@@ -56,7 +78,7 @@ export function newSalt(): string {
 export async function hashPassword(password: string, saltB64: string, iterations = PBKDF2_ITERATIONS): Promise<string> {
   const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: base64ToBytes(saltB64), iterations, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: base64ToBytes(saltB64) as BufferSource, iterations, hash: 'SHA-256' },
     keyMaterial,
     KEY_BITS,
   )

@@ -8,6 +8,7 @@
     "dev": "vite",
     "typecheck:node": "tsc -p tsconfig.node.json --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "dev:api": "wrangler pages dev dist --d1=DB --compatibility-date=2024-09-23",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '../lib/cn'
 import { haptic } from '../lib/haptics'
@@ -12,8 +12,6 @@ import { AmountText } from './AmountText'
 
 const OPERATORS = ['+', '−', '×', '÷'] as const
 type Operator = (typeof OPERATORS)[number]
-
-const NORMALIZE: Record<string, string> = { '−': '-', '×': '*', '÷': '/' }
 
 function isOperatorChar(ch: string): boolean {
   return OPERATORS.includes(ch as Operator)
@@ -183,35 +181,30 @@ const BackspaceIcon = () => (
 // Amount keypad
 // ---------------------------------------------------------------------------
 
-interface AmountKeypadProps {
+interface KeypadGridProps {
   expression: string
   onExpressionChange: (expression: string) => void
-  currency: string
   onSave: () => void
   saveLabel?: string
   saveDisabled?: boolean
   className?: string
-  /** Rendered above the keys (category/account pickers etc.). */
-  header?: ReactNode
-  /** Secondary action shown next to Save. */
+  /** Secondary action shown under the grid. */
   footerSecondary?: ReactNode
+  /** Bottom safe-area padding for sheets. */
+  safePadding?: boolean
 }
 
-/**
- * Custom numeric keypad with calculator operators. The native keyboard is never
- * shown for amounts — the display is read-only.
- */
-export function AmountKeypad({
+/** The 1-9/./0 keypad with calculator operators, `=` and the Save button. */
+export function KeypadGrid({
   expression,
   onExpressionChange,
-  currency,
   onSave,
   saveLabel = 'Save',
   saveDisabled,
   className,
-  header,
   footerSecondary,
-}: AmountKeypadProps) {
+  safePadding = true,
+}: KeypadGridProps) {
   const press = useCallback((key: string) => onExpressionChange(appendKey(expression, key)), [expression, onExpressionChange])
 
   const equals = () => {
@@ -223,12 +216,7 @@ export function AmountKeypad({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      {header}
-      <div className="px-5 pt-2">
-        <AmountDisplay expression={expression} currency={currency} />
-      </div>
-
-      <div className="grid grid-cols-4 gap-2 px-4 pt-4">
+      <div className="grid grid-cols-4 gap-2 px-4 pt-3">
         <Key label="7" onPress={() => press('7')} />
         <Key label="8" onPress={() => press('8')} />
         <Key label="9" onPress={() => press('9')} />
@@ -273,7 +261,54 @@ export function AmountKeypad({
       </div>
 
       {footerSecondary ? <div className="px-4 pt-3">{footerSecondary}</div> : null}
-      <div className="h-[calc(var(--safe-bottom)+12px)]" />
+      {safePadding ? <div className="h-[calc(var(--safe-bottom)+12px)]" /> : null}
+    </div>
+  )
+}
+
+interface AmountKeypadProps {
+  expression: string
+  onExpressionChange: (expression: string) => void
+  currency: string
+  onSave: () => void
+  saveLabel?: string
+  saveDisabled?: boolean
+  className?: string
+  /** Rendered above the keys (category/account pickers etc.). */
+  header?: ReactNode
+  /** Secondary action shown next to Save. */
+  footerSecondary?: ReactNode
+}
+
+/**
+ * Custom numeric keypad with calculator operators. The native keyboard is never
+ * shown for amounts — the display is read-only.
+ */
+export function AmountKeypad({
+  expression,
+  onExpressionChange,
+  currency,
+  onSave,
+  saveLabel = 'Save',
+  saveDisabled,
+  className,
+  header,
+  footerSecondary,
+}: AmountKeypadProps) {
+  return (
+    <div className={cn('flex flex-col', className)}>
+      {header}
+      <div className="px-5 pt-2">
+        <AmountDisplay expression={expression} currency={currency} />
+      </div>
+      <KeypadGrid
+        expression={expression}
+        onExpressionChange={onExpressionChange}
+        onSave={onSave}
+        saveLabel={saveLabel}
+        saveDisabled={saveDisabled}
+        footerSecondary={footerSecondary}
+      />
     </div>
   )
 }

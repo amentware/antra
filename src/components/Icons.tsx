@@ -270,6 +270,27 @@ export const InfoIcon = (p: IconProps) => (
   </Svg>
 )
 
+export const MoveUpIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 19V5" />
+    <path d="m6 11 6-6 6 6" />
+  </Svg>
+)
+
+export const MoveDownIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 5v14" />
+    <path d="m6 13 6 6 6-6" />
+  </Svg>
+)
+
+export const CopyIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="9" y="9" width="11" height="11" rx="2.4" />
+    <path d="M5.6 15H4.8A1.8 1.8 0 0 1 3 13.2V4.8A1.8 1.8 0 0 1 4.8 3h8.4A1.8 1.8 0 0 1 15 4.8v.8" />
+  </Svg>
+)
+
 export const LogoutIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M14.6 4.5H6.4a1.9 1.9 0 0 0-1.9 1.9v11.2a1.9 1.9 0 0 0 1.9 1.9h8.2" />

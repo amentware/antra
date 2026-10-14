@@ -10,8 +10,9 @@
  * last-write-wins by `updated_at`.
  */
 import { api, HttpError, type SyncOpPayload } from './api'
-import { db, getMeta, META_KEYS, setMeta, type OutboxItem, type SyncTable } from './db'
+import { db, getMeta, META_KEYS, setMeta, type SyncTable } from './db'
 import { useSyncStore } from '../store/useSyncStore'
+import { dedupeOutbox, shouldApplyRemote } from '@shared/sync'
 import type { Account, Budget, Category, Expense, SettingsRow, SyncPullResponse } from '@shared/types'
 
 type AnyRow = Account | Category | Expense | Budget | SettingsRow
@@ -36,16 +37,6 @@ export async function enqueue(table: SyncTable, op: 'upsert' | 'delete', rowId: 
 /** Drop every pending op for a row (used when a row is deleted before it synced). */
 export async function clearQueued(rowId: string): Promise<void> {
   await db.outbox.where('rowId').equals(rowId).delete()
-}
-
-function dedupeOutbox(items: OutboxItem[]): Map<string, OutboxItem> {
-  const latest = new Map<string, OutboxItem>()
-  for (const item of items) {
-    const key = `${item.table}:${item.rowId}`
-    const existing = latest.get(key)
-    if (!existing || (item.id ?? 0) > (existing.id ?? 0)) latest.set(key, item)
-  }
-  return latest
 }
 
 async function buildOps(): Promise<{ ops: SyncOpPayload[]; usedIds: number[] }> {
@@ -143,7 +134,7 @@ export async function flushOutbox(): Promise<boolean> {
 async function mergeRow(table: SyncTable, row: AnyRow): Promise<void> {
   const store = db[table] as unknown as { get: (id: string) => Promise<AnyRow | undefined>; put: (row: AnyRow) => Promise<unknown> }
   const local = await store.get(row.id)
-  if (local && String(local.updated_at) > String(row.updated_at)) return // local edit wins; it is queued
+  if (!shouldApplyRemote(local ?? null, row)) return // local edit wins; it is queued
   await store.put(row)
 }
 

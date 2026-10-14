@@ -69,30 +69,26 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
 
 /** Wipe every cached row (used by logout and "clear cache & resync"). */
 export async function clearCache(): Promise<void> {
-  await db.transaction('rw', db.accounts, db.categories, db.expenses, db.budgets, db.settings, db.meta, db.outbox, async () => {
-    await Promise.all([
-      db.accounts.clear(),
-      db.categories.clear(),
-      db.expenses.clear(),
-      db.budgets.clear(),
-      db.settings.clear(),
-      db.meta.clear(),
-      db.outbox.clear(),
-    ])
-  })
+  await Promise.all([
+    db.accounts.clear(),
+    db.categories.clear(),
+    db.expenses.clear(),
+    db.budgets.clear(),
+    db.settings.clear(),
+    db.meta.clear(),
+    db.outbox.clear(),
+  ])
 }
 
 /** Wipe only synced data, keeping device-local preferences (PIN, lock timeout). */
 export async function clearSyncedData(): Promise<void> {
-  await db.transaction('rw', db.accounts, db.categories, db.expenses, db.budgets, db.settings, db.meta, db.outbox, async () => {
-    await Promise.all([
-      db.accounts.clear(),
-      db.categories.clear(),
-      db.expenses.clear(),
-      db.budgets.clear(),
-      db.settings.clear(),
-      db.outbox.clear(),
-    ])
-    await db.meta.bulkDelete([META_KEYS.cursor, META_KEYS.lastSyncAt, META_KEYS.fullPulled])
-  })
+  await Promise.all([
+    db.accounts.clear(),
+    db.categories.clear(),
+    db.expenses.clear(),
+    db.budgets.clear(),
+    db.settings.clear(),
+    db.outbox.clear(),
+  ])
+  await db.meta.bulkDelete([META_KEYS.cursor, META_KEYS.lastSyncAt, META_KEYS.fullPulled, META_KEYS.tokenOwner])
 }

@@ -7,7 +7,9 @@ import { minorUnits } from './currency'
 
 /** Round half-away-from-zero, the intuitive behaviour for money. */
 export function roundHalfUp(value: number): number {
-  return value < 0 ? -Math.round(-value) : Math.round(value)
+  const magnitude = Math.round(Math.abs(value))
+  if (magnitude === 0) return 0 // never surface -0
+  return value < 0 ? -magnitude : magnitude
 }
 
 /**
@@ -42,8 +44,14 @@ export function parseMajorToMinor(value: string | number, currency?: string): nu
 
   const [intPartRaw = '', fracPartRaw = ''] = s.split('.')
   const intPart = intPartRaw.replace(/[^0-9]/g, '') || '0'
-  const frac = (fracPartRaw.replace(/[^0-9]/g, '') + '0'.repeat(dec)).slice(0, dec)
-  const minor = Number(intPart) * Math.pow(10, dec) + (dec > 0 ? Number(frac || '0') : 0)
+  const fracDigits = fracPartRaw.replace(/[^0-9]/g, '')
+  const frac = (fracDigits + '0'.repeat(dec)).slice(0, dec)
+  let minor = Number(intPart) * Math.pow(10, dec) + (dec > 0 ? Number(frac || '0') : 0)
+  // Round half-up on the first digit beyond the currency's precision.
+  if (fracDigits.length > dec) {
+    const nextDigit = fracDigits.charCodeAt(dec) - 48
+    if (nextDigit >= 5) minor += 1
+  }
   if (!Number.isFinite(minor)) return 0
   return negative ? -minor : minor
 }

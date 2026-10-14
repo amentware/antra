@@ -4,8 +4,8 @@
  */
 import { db } from './db'
 import { newId, nowIso } from './id'
-import { deleteRow, saveRow } from './sync'
-import type { Account, AccountType, Budget, Category, Expense } from '@shared/types'
+import { deleteRow, restoreRow, saveRow } from './sync'
+import type { Account, AccountType, Budget, Category, Expense, SettingsRow } from '@shared/types'
 
 const LOCAL_USER = ''
 
@@ -227,7 +227,6 @@ export async function deleteExpense(id: string): Promise<void> {
 }
 
 export async function restoreExpense(id: string): Promise<void> {
-  const { restoreRow } = await import('./sync')
   await restoreRow('expenses', id)
 }
 
@@ -265,10 +264,12 @@ export async function ensureSettingsRow(): Promise<void> {
   await saveRow('settings', row)
 }
 
-export async function updateSettings(patch: Partial<{ currency: string; theme: string; timezone: string; week_start: number }>): Promise<void> {
+export async function updateSettings(
+  patch: Partial<Pick<SettingsRow, 'currency' | 'theme' | 'timezone' | 'week_start'>>,
+): Promise<void> {
   const existing = await db.settings.toCollection().first()
   const now = nowIso()
-  const row = existing
+  const row: SettingsRow = existing
     ? { ...existing, ...patch, updated_at: now }
     : {
         id: 'local-settings',

@@ -365,7 +365,6 @@ export function calendarHeatmap(expenses: Expense[], monthDate: Date, now = new 
 
   const values = [...byDay.values()].sort((a, b) => a - b)
   const quantile = (q: number) => (values.length ? values[Math.min(values.length - 1, Math.floor(q * values.length))] : 0)
-  const t1 = quantile(0.25)
   const t2 = quantile(0.5)
   const t3 = quantile(0.75)
   const max = values.length ? values[values.length - 1] : 0
@@ -376,7 +375,6 @@ export function calendarHeatmap(expenses: Expense[], monthDate: Date, now = new 
     const minor = byDay.get(key) ?? 0
     let level: HeatCell['level'] = 0
     if (minor > 0) level = minor >= max ? 4 : minor >= t3 ? 3 : minor >= t2 ? 2 : 1
-    void t1
     cells.push({
       date: d,
       key,
@@ -473,4 +471,105 @@ export function groupByDay(expenses: Expense[]): Array<{ key: string; date: Date
       items: items.sort((a, b) => (a.spent_at < b.spent_at ? 1 : -1)),
       totalMinor: sumMinor(items),
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Range-aware trend (Insights screen)
+// ---------------------------------------------------------------------------
+
+export interface RangeTrendPoint {
+  label: string
+  current: number
+  previous: number
+}
+
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * Trend series for the Insights chart, with the previous equivalent period
+ * overlaid as a dashed line. Week/month are plotted per day, year per month.
+ */
+export function rangeTrend(
+  expenses: Expense[],
+  kind: 'week' | 'month' | 'year',
+  anchor: Date,
+  mode: 'daily' | 'cumulative',
+  weekStartsOn: 0 | 1 = 1,
+): RangeTrendPoint[] {
+  if (kind === 'month') {
+    return monthTrend(expenses, anchor, mode === 'cumulative' ? 'cumulative' : 'daily').map((p) => ({
+      label: p.label,
+      current: p.current,
+      previous: p.previous,
+    }))
+  }
+
+  if (kind === 'week') {
+    const range = { kind: 'week' as const, ...weekRangeBounds(anchor, weekStartsOn) }
+    const prev = previousRange(range, weekStartsOn)
+    const cur = dailyTotals(expenses, range)
+    const before = dailyTotals(expenses, prev)
+    let runCur = 0
+    let runPrev = 0
+    return cur.map((day, index) => {
+      const prevDay = before[index] ?? before[before.length - 1]
+      runCur += day.minor
+      runPrev += prevDay?.minor ?? 0
+      return {
+        label: String(day.date.getDate()),
+        current: mode === 'cumulative' ? runCur : day.minor,
+        previous: mode === 'cumulative' ? runPrev : prevDay?.minor ?? 0,
+      }
+    })
+  }
+
+  // Year → one point per month.
+  const yearStart = new Date(anchor.getFullYear(), 0, 1)
+  const months: RangeTrendPoint[] = []
+  let runCur = 0
+  let runPrev = 0
+  for (let m = 0; m < 12; m++) {
+    const start = new Date(yearStart.getFullYear(), m, 1)
+    const end = new Date(yearStart.getFullYear(), m + 1, 0, 23, 59, 59, 999)
+    const prevStart = new Date(yearStart.getFullYear() - 1, m, 1)
+    const prevEnd = new Date(yearStart.getFullYear() - 1, m + 1, 0, 23, 59, 59, 999)
+    const cur = inRangeList(expenses, { kind: 'month', start, end }).reduce((s, e) => s + e.amount_minor, 0)
+    const before = inRangeList(expenses, { kind: 'month', start: prevStart, end: prevEnd }).reduce((s, e) => s + e.amount_minor, 0)
+    runCur += cur
+    runPrev += before
+    months.push({
+      label: MONTH_SHORT[m],
+      current: mode === 'cumulative' ? runCur : cur,
+      previous: mode === 'cumulative' ? runPrev : before,
+    })
+  }
+  return months
+}
+
+function weekRangeBounds(anchor: Date, weekStartsOn: 0 | 1): { start: Date; end: Date } {
+  const start = new Date(anchor)
+  const day = start.getDay()
+  const diff = weekStartsOn === 1 ? (day === 0 ? -6 : 1 - day) : -day
+  start.setDate(start.getDate() + diff)
+  start.setHours(0, 0, 0, 0)
+  const end = addDays(start, 6)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
+/** Expenses on a single local calendar day. */
+export function expensesOnDay(expenses: Expense[], date: Date): Expense[] {
+  const key = dayKey(date)
+  return activeExpenses(expenses)
+    .filter((e) => dayKey(e.spent_at) === key)
+    .sort((a, b) => (a.spent_at < b.spent_at ? 1 : -1))
+}
+
+export function monthTotals(expenses: Expense[], year: number): number[] {
+  const totals = new Array<number>(12).fill(0)
+  for (const e of activeExpenses(expenses)) {
+    const d = new Date(e.spent_at)
+    if (d.getFullYear() === year) totals[d.getMonth()] += e.amount_minor
+  }
+  return totals
 }

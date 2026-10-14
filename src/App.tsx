@@ -24,6 +24,7 @@ import { useSessionStore } from './store/useSessionStore'
 import { useUiStore } from './store/useUiStore'
 import { useAppLock } from './hooks/useAppLock'
 import { useBudgetAlerts } from './hooks/useBudgetAlerts'
+import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { usePreferences } from './hooks/usePreferences'
 import { bindSyncLifecycle, syncNow } from './lib/sync'
 import { db, getMeta, META_KEYS } from './lib/db'
@@ -35,6 +36,9 @@ import { updateSW } from './pwa'
 export default function App() {
   const status = useSessionStore((s) => s.status)
   const bootstrap = useSessionStore((s) => s.bootstrap)
+
+  // Keep bottom sheets clear of the on-screen keyboard (see the hook).
+  useKeyboardInset()
 
   useEffect(() => {
     void bootstrap()

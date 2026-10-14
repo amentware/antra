@@ -4,10 +4,13 @@ import { Card, Tile } from '../components/Card'
 import { IconButton } from '../components/Buttons'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { AccountFormSheet, type AccountFormValues } from '../components/AccountFormSheet'
-import { EditIcon, PlusIcon } from '../components/Icons'
+import { Sheet } from '../components/Sheet'
+import { Button } from '../components/Buttons'
+import { EditIcon, PlusIcon, TrashIcon } from '../components/Icons'
 import { useAccounts } from '../hooks/useData'
 import { usePreferences } from '../hooks/usePreferences'
-import { createAccount, setAccountArchived, updateAccount } from '../lib/repo'
+import { createAccount, deleteAccount, setAccountArchived, updateAccount } from '../lib/repo'
+import type { Account } from '@shared/types'
 import { toast } from '../store/useToastStore'
 
 export function ManageAccountsScreen() {
@@ -17,6 +20,7 @@ export function ManageAccountsScreen() {
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<AccountFormValues & { id?: string } | null>(null)
+  const [removing, setRemoving] = useState<Account | null>(null)
 
   const active = useMemo(() => accounts.filter((a) => a.archived === 0), [accounts])
   const archived = useMemo(() => accounts.filter((a) => a.archived === 1), [accounts])
@@ -34,6 +38,13 @@ export function ManageAccountsScreen() {
   const toggleArchived = async (id: string, archived: boolean) => {
     await setAccountArchived(id, archived)
     toast(archived ? 'Account archived' : 'Account restored', 'success')
+  }
+
+  const confirmRemove = async () => {
+    if (!removing) return
+    await deleteAccount(removing.id)
+    setRemoving(null)
+    toast('Account removed', 'success')
   }
 
   return (
@@ -65,6 +76,14 @@ export function ManageAccountsScreen() {
                 className="pressable rounded-full bg-surface-2 p-2.5 text-muted"
               >
                 <EditIcon size={16} />
+              </button>
+              <button
+                type="button"
+                aria-label={`Remove ${account.name}`}
+                onClick={() => setRemoving(account)}
+                className="pressable rounded-full bg-surface-2 p-2.5 text-danger"
+              >
+                <TrashIcon size={16} />
               </button>
             </div>
           ))}
@@ -106,6 +125,23 @@ export function ManageAccountsScreen() {
           if (editing?.id) await handleEdit(editing.id, values)
         }}
       />
+
+      <Sheet open={Boolean(removing)} onClose={() => setRemoving(null)}>
+        <div className="px-5 pb-2 pt-1">
+          <h2 className="text-[17px] font-semibold text-ink">Remove {removing?.name}?</h2>
+          <p className="mt-1 text-[14px] text-muted">
+            Existing expenses stay in your history but will no longer be linked to an active account. This cannot be undone.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2 px-5 pb-2">
+          <Button block variant="danger" size="lg" onClick={() => void confirmRemove()}>
+            Remove account
+          </Button>
+          <Button block variant="secondary" size="lg" onClick={() => setRemoving(null)}>
+            Keep it
+          </Button>
+        </div>
+      </Sheet>
     </div>
   )
 }

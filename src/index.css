@@ -25,7 +25,9 @@
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --nav-height: 68px;
+  --nav-height: 78px;
+  /* On-screen keyboard height, published by useKeyboardInset(). */
+  --kb-inset: 0px;
 
   color-scheme: light;
 }
@@ -162,6 +164,12 @@
   }
   .pt-safe-3 {
     padding-top: calc(var(--safe-top) + 0.75rem);
+  }
+  .pt-safe-4 {
+    padding-top: calc(var(--safe-top) + 1rem);
+  }
+  .pt-safe-5 {
+    padding-top: calc(var(--safe-top) + 1.5rem);
   }
   .mt-safe-top {
     margin-top: var(--safe-top);

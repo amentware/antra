@@ -27,7 +27,7 @@ export function BottomNav({ onAdd }: BottomNavProps) {
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[calc(var(--safe-bottom)+10px)]">
       <nav
         aria-label="Primary"
-        className="pointer-events-auto glass relative flex w-full max-w-[398px] items-center justify-between rounded-pill bg-surface/85 px-2 py-2 shadow-nav ring-1 ring-hairline/70"
+        className="pointer-events-auto glass relative flex w-full max-w-[410px] items-center justify-between rounded-pill bg-surface/85 px-2.5 py-2.5 shadow-nav ring-1 ring-hairline/70"
       >
         {TABS.slice(0, 2).map((tab) => (
           <NavItem key={tab.to} {...tab} active={isActive(tab.to)} onClick={() => navigate(tab.to)} />
@@ -40,9 +40,9 @@ export function BottomNav({ onAdd }: BottomNavProps) {
             tapFeedback()
             onAdd()
           }}
-          className="pressable relative -mt-6 flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-float ring-4 ring-canvas"
+          className="pressable relative -mt-7 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent text-white shadow-float ring-4 ring-canvas"
         >
-          <PlusIcon size={26} strokeWidth={2} />
+          <PlusIcon size={28} strokeWidth={2} />
         </button>
 
         {TABS.slice(2).map((tab) => (
@@ -73,7 +73,7 @@ function NavItem({
       }}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
-      className={cn('relative flex h-11 w-11 items-center justify-center rounded-full', active ? 'text-ink' : 'text-muted')}
+      className={cn('relative flex h-12 w-12 items-center justify-center rounded-full', active ? 'text-ink' : 'text-muted')}
     >
       {active ? (
         <motion.span
@@ -83,7 +83,7 @@ function NavItem({
         />
       ) : null}
       <span className="relative z-10">
-        <Icon size={22} />
+        <Icon size={24} />
       </span>
       <span className="sr-only">{label}</span>
     </button>

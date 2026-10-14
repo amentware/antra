@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, Pill, SectionLabel } from '../components/Card'
 import { Button } from '../components/Buttons'
 import { ScreenHeader } from '../components/ScreenHeader'
-import { CopyIcon, DownloadIcon, KeyIcon } from '../components/Icons'
+import { CopyIcon, DownloadIcon, KeyIcon, SparkleIcon } from '../components/Icons'
 import { toast } from '../store/useToastStore'
 import { cn } from '../lib/cn'
 
@@ -12,6 +12,29 @@ const ENDPOINT = '/api/v1/expenses'
 export function ShortcutsScreen() {
   const navigate = useNavigate()
   const [origin] = useState(() => (typeof window === 'undefined' ? '' : window.location.origin))
+
+  const setupPrompt = `Create an Apple Shortcut named "Log Spend" that records an expense in my Antra tracker.
+
+Request:
+- Endpoint: ${origin}${ENDPOINT}
+- Method: POST
+- Headers:
+    Authorization: Bearer <YOUR_TOKEN>
+    Content-Type: application/json
+
+Steps:
+1. Add an "Ask for Input" action of type Number with the prompt "How much did you spend?" and store the result as "Amount".
+2. Add "Get Contents of URL": URL ${origin}/api/v1/meta, Method GET, Header Authorization: Bearer <YOUR_TOKEN>.
+3. Add "Get Dictionary Value" for the key "name" from the "categories" list in that response — this gives a list of my category names.
+4. Add "Choose from List" using that list (take the first 4 items) and store the choice as "Category".
+5. Add "Get Contents of URL": URL ${origin}${ENDPOINT}, Method POST, Headers Authorization: Bearer <YOUR_TOKEN> and Content-Type: application/json, Request Body JSON with: amount = Amount, category = Category, create_missing = true.
+6. Add "Show Notification" showing the response value "totals.today", titled "Logged".
+
+Finally add the shortcut to Siri with the phrase "Log a spend".
+
+If steps 2-3 are too fiddly, skip them and instead use "Choose from List" with these four hardcoded categories: Food & Dining, Transport, Shopping, Other.
+
+Replace <YOUR_TOKEN> with a token from Antra → Settings → API tokens.`
 
   const bodyExample = `{
   "amount": 250,
@@ -48,6 +71,40 @@ export function ShortcutsScreen() {
               <h1 className="text-[17px] font-semibold text-ink">Log spends without opening the app</h1>
               <p className="text-[13px] text-muted">A two-minute Apple Shortcuts recipe.</p>
             </div>
+          </div>
+        </Card>
+
+        <Card className="p-5 ring-2 ring-accent/15">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-highlight/20 text-ink">
+              <SparkleIcon size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[17px] font-semibold text-ink">Instant setup prompt</h2>
+              <p className="text-[13px] text-muted">Paste this into an AI assistant and it builds the Shortcut for you.</p>
+            </div>
+          </div>
+
+          <div className="mt-3 overflow-hidden rounded-2xl bg-surface-2">
+            <div className="flex items-center justify-between px-4 pt-3">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-faint">Prompt</span>
+              <button
+                type="button"
+                onClick={() => copy(setupPrompt, 'Prompt')}
+                className="pressable flex items-center gap-1 text-[12px] font-semibold text-link"
+              >
+                <CopyIcon size={13} /> Copy
+              </button>
+            </div>
+            <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap px-4 pb-4 pt-2 text-[12px] leading-relaxed text-ink">
+              <code>{setupPrompt}</code>
+            </pre>
+          </div>
+
+          <div className="mt-3">
+            <Button block size="lg" onClick={() => copy(setupPrompt, 'Prompt')}>
+              <CopyIcon size={16} /> Copy setup prompt
+            </Button>
           </div>
         </Card>
 

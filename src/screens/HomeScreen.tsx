@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { PullToRefresh } from '../components/PullToRefresh'
-import { Card, Pill, SectionLabel, Tile } from '../components/Card'
+import { Card, Pill, Tile } from '../components/Card'
 import { AmountText, CompactAmount } from '../components/AmountText'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { ProgressBar } from '../components/Progress'
@@ -17,8 +17,10 @@ import { useSessionStore } from '../store/useSessionStore'
 import { formatMinor } from '../lib/format'
 import { dayTotal, budgetRows, cardStats, groupByDay, rangeStats, totalOutstanding } from '../lib/stats'
 import { computeBudgetSummary, insightText, pickInsight, type InsightCandidate } from '@shared/budget'
-import { formatDayHeading, rangeFor, startOfMonth } from '../lib/date'
+import { addDays, dayKey, formatDayHeading, formatMonthLabel, rangeFor, startOfDay, startOfMonth } from '../lib/date'
 import { syncNow } from '../lib/sync'
+
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export function HomeScreen() {
   const navigate = useNavigate()
@@ -57,6 +59,19 @@ export function HomeScreen() {
     return pickInsight(candidates)
   }, [rows])
 
+  // Last seven days, oldest → today, for the hero sparkline.
+  const weekSeries = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const group of groupByDay(expenses)) totals.set(group.key, group.totalMinor)
+    const today = startOfDay(now)
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = addDays(today, index - 6)
+      const key = dayKey(date)
+      return { key, label: WEEKDAY_LETTERS[date.getDay()], minor: totals.get(key) ?? 0, isToday: index === 6 }
+    })
+  }, [expenses, now])
+  const weekMax = useMemo(() => Math.max(1, ...weekSeries.map((day) => day.minor)), [weekSeries])
+
   const topCategories = useMemo(() => {
     const totals = new Map<string, number>()
     const monthStart = startOfMonth(now).getTime()
@@ -81,13 +96,15 @@ export function HomeScreen() {
     return 'Good evening'
   }, [now])
 
+  const overBudget = bSummary.status === 'over'
+
   return (
-    <PullToRefresh onRefresh={() => syncNow({ force: true })} className="pb-[calc(var(--safe-bottom)+96px)]">
-      <div className="pt-safe-3 px-4">
+    <PullToRefresh onRefresh={() => syncNow({ force: true })} className="pb-[calc(var(--safe-bottom)+112px)]">
+      <div className="pt-safe-4 px-4">
         <header className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] text-muted">{greeting},</p>
-            <h1 className="truncate text-[22px] font-semibold text-ink">{user?.name ?? 'there'}</h1>
+            <p className="text-[13px] font-medium text-muted">{greeting},</p>
+            <h1 className="truncate text-[24px] font-semibold tracking-tight text-ink">{user?.name ?? 'there'}</h1>
           </div>
           <IconButton label="Search transactions" onClick={() => navigate('/transactions')}>
             <SearchIcon size={20} />
@@ -97,40 +114,72 @@ export function HomeScreen() {
           </IconButton>
         </header>
 
-        <div className="mt-3 flex justify-end">
+        <div className="mt-2 flex justify-end">
           <SyncIndicator />
         </div>
 
-        {/* Hero */}
-        <Card className="mt-3 p-5">
-          <SectionLabel>Spent this month</SectionLabel>
-          <div className="mt-2">
-            <AmountText minor={monthStats.totalMinor} currency={preferences.currency} animate className="text-display text-ink" />
+        {/* Hero — the one bold, brand-coloured surface on this screen. */}
+        <div className="relative mt-3 overflow-hidden rounded-card bg-gradient-to-br from-[#2A5CF0] via-[#1546D9] to-[#0D2A8C] p-5 text-white shadow-float">
+          <div className="pointer-events-none absolute -right-14 -top-16 h-48 w-48 rounded-full bg-highlight/25 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+
+          <div className="relative">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-white/70">Spent this month</span>
+              <span className="rounded-pill bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white/90">
+                {formatMonthLabel(now)}
+              </span>
+            </div>
+
+            <div className="mt-2">
+              <AmountText
+                minor={monthStats.totalMinor}
+                currency={preferences.currency}
+                animate
+                className="text-display text-white"
+                symbolClassName="text-white/85"
+                decimalClassName="text-white/60"
+              />
+            </div>
+
+            <div className="mt-4 flex items-end justify-between gap-1.5" aria-hidden>
+              {weekSeries.map((day) => (
+                <div key={day.key} className="flex flex-1 flex-col items-center gap-1.5">
+                  <span
+                    className={cn('w-full rounded-pill', day.isToday ? 'bg-highlight' : 'bg-white/35')}
+                    style={{ height: day.minor > 0 ? Math.max(6, Math.round((day.minor / weekMax) * 46)) : 4 }}
+                  />
+                  <span className={cn('text-[10px] font-semibold', day.isToday ? 'text-white' : 'text-white/55')}>{day.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/15 pt-3.5">
+              <HeroStat
+                dark
+                label="Budget left"
+                value={bSummary.totalLimitMinor > 0 ? formatMinor(Math.max(0, bSummary.remainingMinor), preferences.currency) : '—'}
+                tone={overBudget ? 'danger' : 'default'}
+              />
+              <HeroStat dark label="Today" value={formatMinor(todayMinor, preferences.currency)} />
+              <HeroStat dark label="Daily avg" value={formatMinor(monthStats.dailyAverageMinor, preferences.currency)} />
+            </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <HeroStat
-              label="Budget left"
-              value={bSummary.totalLimitMinor > 0 ? formatMinor(Math.max(0, bSummary.remainingMinor), preferences.currency) : '—'}
-              tone={bSummary.status === 'over' ? 'danger' : 'default'}
-            />
-            <HeroStat label="Today" value={formatMinor(todayMinor, preferences.currency)} />
-            <HeroStat label="Daily avg" value={formatMinor(monthStats.dailyAverageMinor, preferences.currency)} />
-          </div>
-        </Card>
+        </div>
 
         {insight ? (
           <button
             type="button"
             onClick={() => navigate('/budgets')}
-            className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-accent/10 px-4 py-3 text-left ring-1 ring-accent/15"
+            className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-highlight/15 px-4 py-3 text-left ring-1 ring-highlight/25"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-highlight/25 text-ink">
               <SparkleIcon size={17} />
             </span>
             <span className="flex-1 text-[13px] font-medium leading-snug text-ink">
               {insightText(insight, (minor) => formatMinor(minor, preferences.currency))}
             </span>
-            <ChevronRight size={16} className="shrink-0 text-accent" />
+            <ChevronRight size={16} className="shrink-0 text-ink/60" />
           </button>
         ) : null}
 
@@ -208,7 +257,7 @@ export function HomeScreen() {
           </Card>
         ) : null}
 
-        {/* Budgets — kept separate from the category breakdown below. */}
+        {/* Budgets — deliberately separate from the category breakdown below. */}
         <section className="mt-5">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-[19px] font-semibold text-ink">Budgets</h2>
@@ -240,7 +289,7 @@ export function HomeScreen() {
                     {formatMinor(bSummary.totalSpentMinor, preferences.currency)}
                     <span className="text-faint"> of {formatMinor(bSummary.totalLimitMinor, preferences.currency)}</span>
                   </span>
-                  <Pill tone={bSummary.status === 'over' ? 'danger' : bSummary.status === 'warning' ? 'warning' : 'positive'}>
+                  <Pill tone={overBudget ? 'danger' : bSummary.status === 'warning' ? 'warning' : 'positive'}>
                     {Math.round(bSummary.percentUsed)}% used
                   </Pill>
                 </div>
@@ -305,7 +354,7 @@ export function HomeScreen() {
           )}
         </section>
 
-        {/* Categories */}
+        {/* Spending by category */}
         {topCategories.length > 0 ? (
           <section className="mt-5">
             <div className="flex items-center justify-between px-1">
@@ -323,7 +372,7 @@ export function HomeScreen() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.04, duration: 0.28 }}
                   onClick={() => navigate('/insights')}
-                  className="pressable flex w-[132px] shrink-0 flex-col gap-3 rounded-card bg-surface p-4 text-left shadow-card ring-1 ring-hairline/70"
+                  className="pressable flex w-[136px] shrink-0 flex-col gap-3 rounded-card bg-surface p-4 text-left shadow-card ring-1 ring-hairline/70"
                 >
                   <Tile emoji={category!.emoji} color={category!.color} size={38} />
                   <div className="min-w-0">
@@ -384,14 +433,38 @@ export function HomeScreen() {
   )
 }
 
-function HeroStat({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'danger' | 'positive' }) {
+function HeroStat({
+  label,
+  value,
+  tone = 'default',
+  dark,
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'danger' | 'positive'
+  dark?: boolean
+}) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-faint">{label}</span>
+      <span className={cn('text-[10px] font-semibold uppercase tracking-[0.08em]', dark ? 'text-white/60' : 'text-faint')}>
+        {label}
+      </span>
       <span
-        className={
-          tone === 'danger' ? 'text-[14px] font-semibold tabular text-danger' : tone === 'positive' ? 'text-[14px] font-semibold tabular text-positive' : 'text-[14px] font-semibold tabular text-ink'
-        }
+        className={cn(
+          'font-semibold tabular',
+          dark ? 'text-[15px]' : 'text-[14px]',
+          tone === 'danger'
+            ? dark
+              ? 'text-highlight'
+              : 'text-danger'
+            : tone === 'positive'
+              ? dark
+                ? 'text-white'
+                : 'text-positive'
+              : dark
+                ? 'text-white'
+                : 'text-ink',
+        )}
       >
         {value}
       </span>

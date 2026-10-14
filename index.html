@@ -48,10 +48,19 @@
           var bottom = parseFloat(cs.paddingBottom) || 0
           root.removeChild(probe)
 
-          var standalone = window.navigator.standalone === true
+          var standalone =
+            window.navigator.standalone === true ||
+            (!!window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
           var tall = Math.max(window.screen.width, window.screen.height) >= 780
-          if (standalone && top === 0) root.style.setProperty('--safe-top', tall ? '47px' : '20px')
-          if (standalone && bottom === 0) root.style.setProperty('--safe-bottom', tall ? '34px' : '0px')
+          // Installed apps have no browser chrome, so an under-reported inset
+          // would slide content under the status bar. Only ever raise it.
+          if (standalone) {
+            var minTop = tall ? 46 : 19
+            var minBottom = tall ? 30 : 0
+            var appliedTop = parseFloat(root.style.getPropertyValue('--safe-top')) || top
+            if (appliedTop < minTop) root.style.setProperty('--safe-top', tall ? '47px' : '20px')
+            if (bottom < minBottom) root.style.setProperty('--safe-bottom', tall ? '34px' : '0px')
+          }
         } catch (e) {}
       })()
     </script>

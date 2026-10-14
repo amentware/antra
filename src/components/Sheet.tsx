@@ -50,6 +50,7 @@ export function Sheet({ open, onClose, children, dismissible = true, className, 
               fullHeight ? 'top-[env(safe-area-inset-top)]' : 'max-h-[92%]',
               className,
             )}
+            style={{ paddingBottom: 'var(--kb-inset, 0px)' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%', pointerEvents: 'none' }}
@@ -65,7 +66,10 @@ export function Sheet({ open, onClose, children, dismissible = true, className, 
             <div className="flex justify-center pt-3 pb-1">
               <span className="h-1.5 w-11 rounded-pill bg-hairline" />
             </div>
-            <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+            {/* Partial sheets end above the home indicator so their action
+                buttons are never clipped. Full-height sheets manage their own
+                bottom safe-area (e.g. the keypad's spacer). */}
+            <div className={cn('flex min-h-0 flex-1 flex-col', !fullHeight && 'pb-[var(--safe-bottom)]')}>{children}</div>
           </motion.div>
         </div>
       ) : null}

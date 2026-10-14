@@ -24,7 +24,10 @@ export function AuthScreen() {
 
   return (
     <div className="scroll-y h-full safe-top bg-canvas">
-      <div className="flex min-h-full flex-col justify-center px-6 py-10">
+      <div
+        className="flex min-h-full flex-col justify-center px-6 py-10"
+        style={{ paddingBottom: 'calc(var(--kb-inset, 0px) + 2.5rem)' }}
+      >
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col items-center gap-3 text-center">
           <Logo size={64} />
           <div>

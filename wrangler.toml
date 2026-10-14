@@ -15,7 +15,7 @@ ENVIRONMENT = "production"
 [[d1_databases]]
 binding = "DB"
 database_name = "antra-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "ff4a78e5-907f-4b52-9363-3ec7f5793685"
 
 # Optional: KV namespace used to make login rate limiting global across
 # isolates. Antra falls back to a D1-backed limiter when this is not bound.

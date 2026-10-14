@@ -21,6 +21,10 @@ app.use('*', async (c, next) => {
   await next()
   c.header('X-Content-Type-Options', 'nosniff')
   c.header('Referrer-Policy', 'no-referrer')
+  // API responses may contain user data; never cache them. (Pages' `_headers`
+  // only applies to static assets, not Function responses, so set it here too.)
+  c.header('Cache-Control', 'no-store')
+  c.header('X-Robots-Tag', 'noindex')
 })
 
 // Shortcuts don't need CORS, but a permissive policy keeps the API usable from

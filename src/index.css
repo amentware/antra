@@ -7,18 +7,21 @@
    Values are space-separated RGB channels so Tailwind's `/alpha` works.
 --------------------------------------------------------------------------- */
 :root {
-  --c-canvas: 245 245 247;
+  /* Warm off-white canvas (#EDECE6) with white cards, blue accent (#1546D9)
+     and an amber highlight (#F9B318). */
+  --c-canvas: 237 236 230;
   --c-surface: 255 255 255;
-  --c-surface-2: 243 244 246;
-  --c-hairline: 229 231 235;
-  --c-ink: 17 19 23;
-  --c-muted: 108 114 124;
-  --c-faint: 154 161 172;
-  --c-accent: 242 107 29;
-  --c-link: 10 132 255;
-  --c-positive: 45 158 106;
-  --c-warning: 214 143 26;
-  --c-danger: 229 72 77;
+  --c-surface-2: 228 226 217;
+  --c-hairline: 216 214 203;
+  --c-ink: 18 19 23;
+  --c-muted: 107 111 120;
+  --c-faint: 150 156 166;
+  --c-accent: 21 70 217;
+  --c-highlight: 249 179 24;
+  --c-link: 21 70 217;
+  --c-positive: 31 157 99;
+  --c-warning: 249 179 24;
+  --c-danger: 217 67 74;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -28,18 +31,19 @@
 }
 
 .dark {
-  --c-canvas: 9 9 11;
-  --c-surface: 23 24 27;
-  --c-surface-2: 33 35 40;
-  --c-hairline: 45 48 54;
-  --c-ink: 244 245 247;
-  --c-muted: 150 157 168;
-  --c-faint: 108 115 126;
-  --c-accent: 255 138 61;
-  --c-link: 10 132 255;
+  --c-canvas: 14 15 19;
+  --c-surface: 23 25 31;
+  --c-surface-2: 33 36 44;
+  --c-hairline: 44 48 58;
+  --c-ink: 240 239 234;
+  --c-muted: 154 160 172;
+  --c-faint: 108 115 128;
+  --c-accent: 91 123 247;
+  --c-highlight: 249 179 24;
+  --c-link: 124 155 255;
   --c-positive: 61 190 130;
-  --c-warning: 240 180 70;
-  --c-danger: 255 105 110;
+  --c-warning: 249 179 24;
+  --c-danger: 255 107 114;
 
   color-scheme: dark;
 }
@@ -135,6 +139,14 @@
   }
   .safe-bottom {
     padding-bottom: var(--safe-bottom);
+  }
+  /* Safe-area + a fixed gap, as a single declaration so it can never be
+     overridden by another padding-top utility (e.g. `pt-3`). */
+  .pt-safe-2 {
+    padding-top: calc(var(--safe-top) + 0.5rem);
+  }
+  .pt-safe-3 {
+    padding-top: calc(var(--safe-top) + 0.75rem);
   }
   .mt-safe-top {
     margin-top: var(--safe-top);

@@ -8,7 +8,7 @@ import { ExpenseRow } from '../components/ExpenseRow'
 import { EmptyState } from '../components/EmptyState'
 import { Sheet } from '../components/Sheet'
 import { ScreenHeader } from '../components/ScreenHeader'
-import { IconButton } from '../components/Buttons'
+import { Button, IconButton } from '../components/Buttons'
 import { ChevronLeft, ChevronRight, SearchIcon } from '../components/Icons'
 import { SyncIndicator } from '../components/SyncIndicator'
 import { useAccounts, useBudgets, useCategories, useExpenses, useLookups } from '../hooks/useData'
@@ -124,7 +124,7 @@ export function InsightsScreen() {
 
   return (
     <div className="scroll-y h-full pb-[calc(var(--safe-bottom)+96px)]">
-      <div className="safe-top sticky top-0 z-20 bg-canvas/85 px-4 pb-2 pt-3 backdrop-blur-xl">
+      <div className="pt-safe-3 sticky top-0 z-20 bg-canvas/85 px-4 pb-2 backdrop-blur-xl">
         <ScreenHeader
           title="Insights"
           large
@@ -240,18 +240,37 @@ export function InsightsScreen() {
           </Card>
         ) : null}
 
-        {/* Budgets vs actual */}
-        {rows.length > 0 ? (
-          <Card className="overflow-hidden">
-            <div className="flex items-center justify-between px-4 pb-2 pt-4">
-              <h2 className="text-[17px] font-semibold text-ink">Budget vs actual</h2>
-              <button type="button" className="pressable text-[14px] font-medium text-link" onClick={() => navigate('/budgets')}>
-                Manage
-              </button>
+        {/* Budgets vs actual — always visible so budgets are discoverable */}
+        <Card className="overflow-hidden">
+          <button
+            type="button"
+            onClick={() => navigate('/budgets')}
+            className="flex w-full items-center justify-between px-4 pb-2 pt-4 text-left"
+          >
+            <h2 className="text-[17px] font-semibold text-ink">Budget vs actual</h2>
+            <span className="flex items-center gap-0.5 text-[14px] font-medium text-link">
+              {rows.length > 0 ? 'Manage' : 'Set up'}
+              <ChevronRight size={15} />
+            </span>
+          </button>
+          {rows.length === 0 ? (
+            <div className="px-4 pb-4 pt-1">
+              <p className="text-[13px] leading-relaxed text-muted">
+                Set a monthly limit per category and Antra will track your pace, safe-to-spend and projections here.
+              </p>
+              <Button block className="mt-3" onClick={() => navigate('/budgets')}>
+                Set monthly budgets
+              </Button>
             </div>
+          ) : (
             <div className="divide-y divide-hairline/60">
               {rows.slice(0, 6).map((row) => (
-                <div key={row.category.id} className="flex items-center gap-3 px-4 py-3">
+                <button
+                  key={row.category.id}
+                  type="button"
+                  onClick={() => navigate('/budgets')}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-left"
+                >
                   <span className="text-[20px]" aria-hidden>
                     {row.category.emoji}
                   </span>
@@ -265,11 +284,11 @@ export function InsightsScreen() {
                     </div>
                     <ProgressBar className="mt-2" height={6} percent={row.progress?.percentUsed ?? 0} />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
-          </Card>
-        ) : null}
+          )}
+        </Card>
 
         {/* Calendar heatmap */}
         {kind === 'month' ? (

@@ -3,59 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '../lib/cn'
 import { haptic } from '../lib/haptics'
 import { evaluateExpression } from '@shared/money'
-import { minorFactor } from '@shared/currency'
+import { appendKey, balancedExpression, containsOperator, displayMinor, isInvalidExpression } from '../lib/expression'
 import { AmountText } from './AmountText'
 
-// ---------------------------------------------------------------------------
-// Expression helpers
-// ---------------------------------------------------------------------------
-
-const OPERATORS = ['+', '−', '×', '÷'] as const
-type Operator = (typeof OPERATORS)[number]
-
-function isOperatorChar(ch: string): boolean {
-  return OPERATORS.includes(ch as Operator)
-}
-
-/** The number the user is currently typing (text after the last operator). */
-export function currentTerm(expression: string): string {
-  let start = 0
-  for (let i = 1; i < expression.length; i++) if (isOperatorChar(expression[i])) start = i + 1
-  return expression.slice(start)
-}
-
-export function appendKey(expression: string, key: string): string {
-  if (key === '⌫') return expression.slice(0, -1)
-  if (key === 'C') return ''
-
-  if (key === '.') {
-    const term = currentTerm(expression)
-    if (term.includes('.')) return expression
-    return term === '' ? `${expression}0.` : `${expression}.`
-  }
-
-  if (isOperatorChar(key)) {
-    if (expression === '') return ''
-    const last = expression[expression.length - 1]
-    if (isOperatorChar(last)) return expression.slice(0, -1) + key
-    if (last === '.') return expression.slice(0, -1) + key
-    return expression + key
-  }
-
-  // Digit
-  const term = currentTerm(expression)
-  if (term === '0') return `${expression.slice(0, -1)}${key}`
-  if (term.replace('.', '').length >= 9) return expression // cap the length
-  return expression + key
-}
-
-/** Evaluate the expression to minor units, or null when incomplete/invalid. */
-export function expressionToMinor(expression: string, currency: string): number | null {
-  if (!expression.trim()) return null
-  const result = evaluateExpression(expression)
-  if (result === null || !Number.isFinite(result)) return null
-  return Math.round(result * minorFactor(currency))
-}
+// Re-exported so existing call sites keep importing from this component module.
+export { appendKey, containsOperator, currentTerm, expressionToMinor } from '../lib/expression'
 
 // ---------------------------------------------------------------------------
 // Display
@@ -69,18 +21,10 @@ interface AmountDisplayProps {
 
 /** Live, currency-formatted amount that animates as digits are entered. */
 export function AmountDisplay({ expression, currency, className }: AmountDisplayProps) {
-  const hasOperator = /[+\-*/]/.test(expression.replace(/^−/, ''))
-  const evaluated = evaluateExpression(expression)
-  const term = currentTerm(expression)
-  const factor = minorFactor(currency)
-
-  let minor: number
-  if (hasOperator && evaluated !== null) minor = Math.round(evaluated * factor)
-  else if (term === '' || term === '.') minor = 0
-  else minor = Math.round((Number(term) || 0) * factor)
-
-  const showExpression = hasOperator && expression.trim().length > 0
-  const invalid = expression.trim().length > 0 && evaluated === null
+  const minor = displayMinor(expression, currency)
+  const showExpression = containsOperator(expression) && expression.trim().length > 0
+  const invalid = isInvalidExpression(expression)
+  const complete = evaluateExpression(expression) !== null
 
   return (
     <div className={cn('flex flex-col items-center', className)}>
@@ -92,9 +36,10 @@ export function AmountDisplay({ expression, currency, className }: AmountDisplay
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className={cn(invalid && 'text-danger')}
+              className={cn('inline-flex items-center gap-1', invalid && 'text-danger')}
             >
               {expression.replace(/\*/g, '×').replace(/\//g, '÷').replace(/-/g, '−')}
+              {complete ? <span className="text-faint">=</span> : null}
             </motion.span>
           ) : null}
         </AnimatePresence>
@@ -148,7 +93,7 @@ function Key({ label, onPress, variant = 'digit', className, ariaLabel, onLongPr
       className={cn(
         'pressable flex h-[54px] select-none items-center justify-center rounded-2xl text-[24px] font-semibold leading-none',
         variant === 'digit' && 'bg-surface text-ink shadow-card ring-1 ring-hairline/60',
-        variant === 'operator' && 'bg-surface-2 text-accent',
+        variant === 'operator' && 'bg-accent/10 text-accent font-bold',
         variant === 'muted' && 'bg-surface-2 text-muted',
         className,
       )}
@@ -208,7 +153,7 @@ export function KeypadGrid({
   const press = useCallback((key: string) => onExpressionChange(appendKey(expression, key)), [expression, onExpressionChange])
 
   const equals = () => {
-    const result = evaluateExpression(expression)
+    const result = evaluateExpression(balancedExpression(expression))
     if (result === null || !Number.isFinite(result)) return
     const rounded = Math.round(result * 100) / 100
     onExpressionChange(String(rounded).replace(/\.0+$/, ''))

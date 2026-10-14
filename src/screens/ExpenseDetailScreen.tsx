@@ -33,7 +33,7 @@ export function ExpenseDetailScreen() {
   if (!expense) {
     return (
       <div className="flex h-full flex-col">
-        <div className="safe-top px-4 pt-3">
+        <div className="pt-safe-3 px-4">
           <ScreenHeader title="Expense" onBack={() => navigate(-1)} />
         </div>
         <div className="flex flex-1 items-center justify-center px-10 text-center text-[14px] text-muted">
@@ -59,7 +59,7 @@ export function ExpenseDetailScreen() {
 
   return (
     <div className="scroll-y h-full pb-[calc(var(--safe-bottom)+32px)]">
-      <div className="safe-top sticky top-0 z-20 bg-canvas/85 px-4 pb-2 pt-3 backdrop-blur-xl">
+      <div className="pt-safe-3 sticky top-0 z-20 bg-canvas/85 px-4 pb-2 backdrop-blur-xl">
         <ScreenHeader
           title="Expense"
           onBack={() => navigate(-1)}

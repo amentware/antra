@@ -15,6 +15,7 @@ export default {
         faint: 'rgb(var(--c-faint) / <alpha-value>)',
         // Accents.
         accent: 'rgb(var(--c-accent) / <alpha-value>)',
+        highlight: 'rgb(var(--c-highlight) / <alpha-value>)',
         link: 'rgb(var(--c-link) / <alpha-value>)',
         positive: 'rgb(var(--c-positive) / <alpha-value>)',
         warning: 'rgb(var(--c-warning) / <alpha-value>)',

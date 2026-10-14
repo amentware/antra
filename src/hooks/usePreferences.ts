@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../lib/db'
-import { applyTheme, subscribeSystemTheme, type ThemePreference } from '../lib/theme'
+import { applyTheme, readStoredTheme, subscribeSystemTheme, type ThemePreference } from '../lib/theme'
 import { DEFAULT_CURRENCY, isKnownCurrency } from '@shared/currency'
 
 export interface Preferences {
@@ -24,7 +24,9 @@ const FALLBACK: Preferences = {
 export function usePreferences(): Preferences {
   const settings = useLiveQuery(() => db.settings.filter((s) => !s.deleted_at).first(), [])
 
-  const theme = (settings?.theme as ThemePreference) ?? FALLBACK.theme
+  // While the settings row loads (or offline), fall back to the last theme the
+  // user picked so we never momentarily flip back to the OS theme.
+  const theme = (settings?.theme as ThemePreference) ?? readStoredTheme()
   const currency = settings?.currency && isKnownCurrency(settings.currency) ? settings.currency : FALLBACK.currency
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function usePreferences(): Preferences {
     return subscribeSystemTheme(() => applyTheme('system'))
   }, [theme])
 
-  if (!settings) return FALLBACK
+  if (!settings) return { ...FALLBACK, theme }
   return {
     currency,
     theme,

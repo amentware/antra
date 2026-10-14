@@ -6,7 +6,7 @@ import { Card, Pill, SectionLabel, Tile } from '../components/Card'
 import { AmountText, CompactAmount } from '../components/AmountText'
 import { ExpenseRow } from '../components/ExpenseRow'
 import { IconButton } from '../components/Buttons'
-import { BellIcon, ChevronRight, SearchIcon, SparkleIcon } from '../components/Icons'
+import { BellIcon, ChevronRight, SearchIcon, SparkleIcon, TargetIcon } from '../components/Icons'
 import { SyncIndicator } from '../components/SyncIndicator'
 import { EmptyState } from '../components/EmptyState'
 import { useAccounts, useBudgets, useCategories, useExpenses, useLookups } from '../hooks/useData'
@@ -78,7 +78,7 @@ export function HomeScreen() {
 
   return (
     <PullToRefresh onRefresh={() => syncNow({ force: true })} className="pb-[calc(var(--safe-bottom)+96px)]">
-      <div className="safe-top px-4 pt-3">
+      <div className="pt-safe-3 px-4">
         <header className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[13px] text-muted">{greeting},</p>
@@ -163,7 +163,22 @@ export function HomeScreen() {
               {bSummary.overCount > 0 ? <span className="text-[12px] font-semibold text-danger">{bSummary.overCount} over</span> : null}
             </div>
           </Card>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate('/budgets')}
+            className="pressable mt-3 flex w-full items-center gap-3 rounded-card bg-surface px-4 py-3.5 text-left shadow-card ring-1 ring-hairline/70"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+              <TargetIcon size={18} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-[14px] font-semibold text-ink">Set monthly budgets</span>
+              <span className="block text-[12px] text-muted">Track pace, safe-to-spend and projections per category.</span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-muted" />
+          </button>
+        )}
 
         {/* Categories */}
         {topCategories.length > 0 ? (

@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply antra-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply antra-db --remote",
-    "cf:deploy": "npm run build && wrangler pages deploy dist"
+    "cf:deploy": "npm run build && wrangler pages deploy dist --project-name antraapp --branch main"
   },
   "dependencies": {
     "clsx": "^2.1.1",

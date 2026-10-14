@@ -54,7 +54,7 @@ export function BudgetsScreen() {
 
   return (
     <div className="scroll-y h-full pb-[calc(var(--safe-bottom)+96px)]">
-      <div className="safe-top sticky top-0 z-20 bg-canvas/85 px-4 pb-3 pt-3 backdrop-blur-xl">
+      <div className="pt-safe-3 sticky top-0 z-20 bg-canvas/85 px-4 pb-3 backdrop-blur-xl">
         <ScreenHeader
           title="Budgets"
           large

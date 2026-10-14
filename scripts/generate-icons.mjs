@@ -155,7 +155,7 @@ function drawMark(px, width, height, box, hex) {
   strokeSegment(px, width, height, cx - barHalf, barY, cx + barHalf, barY, stroke * 0.92, hex)
 }
 
-function renderIcon(size, { markScale = 0.62, top = '#FF8A3D', bottom = '#F26B1D', mark = '#FFFFFF', pad = 0 } = {}) {
+function renderIcon(size, { markScale = 0.62, top = '#3B67F0', bottom = '#1546D9', mark = '#FFFFFF', pad = 0 } = {}) {
   const px = new Uint8ClampedArray(size * size * 4)
   const inner = size - pad * 2
   const scaledTop = top
@@ -180,7 +180,7 @@ function renderIcon(size, { markScale = 0.62, top = '#FF8A3D', bottom = '#F26B1D
   return px
 }
 
-function renderSplash(width, height, { bg = '#F5F5F7', mark = '#F26B1D', markScale = 0.16 } = {}) {
+function renderSplash(width, height, { bg = '#EDECE6', mark = '#1546D9', markScale = 0.16 } = {}) {
   const px = new Uint8ClampedArray(width * height * 4)
   fillBackground(px, width, height, bg, bg)
   drawMark(px, width, height, { cx: width / 2, cy: height / 2, size: width * markScale }, mark)
@@ -230,8 +230,8 @@ for (const [w, h] of splashes) {
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Antra">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FF8A3D"/>
-      <stop offset="1" stop-color="#F26B1D"/>
+      <stop offset="0" stop-color="#3B67F0"/>
+      <stop offset="1" stop-color="#1546D9"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="16" fill="url(#g)"/>

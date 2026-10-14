@@ -13,8 +13,8 @@ export function Logo({ size = 56, className }: { size?: number; className?: stri
     >
       <defs>
         <linearGradient id="antra-logo" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#FF8A3D" />
-          <stop offset="1" stopColor="#F26B1D" />
+          <stop offset="0" stopColor="#3B67F0" />
+          <stop offset="1" stopColor="#1546D9" />
         </linearGradient>
       </defs>
       <rect width="64" height="64" rx="16" fill="url(#antra-logo)" />

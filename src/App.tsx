@@ -4,6 +4,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { PhoneFrame } from './components/PhoneFrame'
 import { BottomNav } from './components/BottomNav'
 import { ToastHost } from './components/ToastHost'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { AddExpenseSheet } from './components/AddExpenseSheet'
 import { AuthScreen } from './screens/AuthScreen'
 import { LockScreen } from './screens/LockScreen'
@@ -111,30 +112,32 @@ function AuthenticatedApp() {
 
   return (
     <div className="relative h-full">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="h-full"
+          className="absolute inset-0"
         >
-          <Routes location={location}>
-            <Route path="/" element={<HomeScreen />} />
-            <Route path="/insights" element={<InsightsScreen />} />
-            <Route path="/cards" element={<AccountsScreen />} />
-            <Route path="/cards/:id" element={<AccountDetailScreen />} />
-            <Route path="/budgets" element={<BudgetsScreen />} />
-            <Route path="/transactions" element={<TransactionsScreen />} />
-            <Route path="/expense/:id" element={<ExpenseDetailScreen />} />
-            <Route path="/settings" element={<SettingsScreen />} />
-            <Route path="/settings/categories" element={<CategoriesScreen />} />
-            <Route path="/settings/accounts" element={<ManageAccountsScreen />} />
-            <Route path="/settings/tokens" element={<TokensScreen />} />
-            <Route path="/settings/shortcuts" element={<ShortcutsScreen />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes location={location}>
+              <Route path="/" element={<HomeScreen />} />
+              <Route path="/insights" element={<InsightsScreen />} />
+              <Route path="/cards" element={<AccountsScreen />} />
+              <Route path="/cards/:id" element={<AccountDetailScreen />} />
+              <Route path="/budgets" element={<BudgetsScreen />} />
+              <Route path="/transactions" element={<TransactionsScreen />} />
+              <Route path="/expense/:id" element={<ExpenseDetailScreen />} />
+              <Route path="/settings" element={<SettingsScreen />} />
+              <Route path="/settings/categories" element={<CategoriesScreen />} />
+              <Route path="/settings/accounts" element={<ManageAccountsScreen />} />
+              <Route path="/settings/tokens" element={<TokensScreen />} />
+              <Route path="/settings/shortcuts" element={<ShortcutsScreen />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ErrorBoundary>
         </motion.div>
       </AnimatePresence>
 

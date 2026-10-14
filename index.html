@@ -7,8 +7,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="description" content="Antra — track your expenses and budgets." />
-    <meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#EDECE6" />
 
     <!-- iOS standalone / native feel -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,8 +17,25 @@
     <meta name="format-detection" content="telephone=no" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="mask-icon" href="/favicon.svg" color="#F26B1D" />
+    <link rel="mask-icon" href="/favicon.svg" color="#1546D9" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Restore the saved theme before first paint to avoid a flash. -->
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('antra.theme') || 'system'
+          var dark =
+            pref === 'dark' ||
+            (pref !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var root = document.documentElement
+          root.classList.toggle('dark', dark)
+          root.classList.toggle('light', !dark)
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', dark ? '#0E0F13' : '#EDECE6')
+        } catch (e) {}
+      })()
+    </script>
 
     <!-- iOS splash screens (generated) -->
     <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />

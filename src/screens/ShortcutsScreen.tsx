@@ -34,7 +34,7 @@ export function ShortcutsScreen() {
 
   return (
     <div className="scroll-y h-full pb-[calc(var(--safe-bottom)+40px)]">
-      <div className="safe-top sticky top-0 z-20 bg-canvas/85 px-4 pb-3 pt-3 backdrop-blur-xl">
+      <div className="pt-safe-3 sticky top-0 z-20 bg-canvas/85 px-4 pb-3 backdrop-blur-xl">
         <ScreenHeader title="Shortcuts setup" subtitle="Add expenses with Siri" onBack={() => navigate(-1)} />
       </div>
 

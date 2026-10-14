@@ -1,0 +1,51 @@
+{
+  "name": "antra",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Antra — a phone-only installable PWA for tracking expenses and budgets.",
+  "scripts": {
+    "dev": "vite",
+    "typecheck:node": "tsc -p tsconfig.node.json --noEmit",
+    "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
+    "dev:api": "wrangler pages dev dist --d1=DB --compatibility-date=2024-09-23",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/generate-icons.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply antra-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply antra-db --remote",
+    "cf:deploy": "npm run build && wrangler pages deploy dist"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "dexie": "^4.0.10",
+    "dexie-react-hooks": "^1.1.7",
+    "framer-motion": "^11.11.9",
+    "hono": "^4.6.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0",
+    "recharts": "^2.13.3",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "@types/node": "^22.8.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vite-plugin-pwa": "^0.20.5",
+    "vitest": "^2.1.4",
+    "wrangler": "^3.87.0"
+  }
+}

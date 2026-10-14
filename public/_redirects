@@ -1,0 +1,3 @@
+# Cloudflare Pages serves the API from /functions/api/* before these rules.
+# Everything else falls back to the SPA shell so client-side routing works.
+/*    /index.html   200
